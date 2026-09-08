@@ -11,7 +11,10 @@
   "license": "ISC",
   "description": "Multi-step payment form with SQLite storage and admin dashboard",
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
+    "@libsql/client": "^0.18.0",
     "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

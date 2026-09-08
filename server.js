@@ -1,6 +1,6 @@
 const path = require('path');
 const express = require('express');
-const db = require('./db');
+const { db, ready } = require('./db');
 const { validatePayment, detectBrand } = require('./validation');
 
 const app = express();
@@ -22,42 +22,69 @@ function requireAdmin(req, res, next) {
   res.status(401).send('Authentication required');
 }
 
-const insertTransaction = db.prepare(`
+const INSERT_SQL = `
   INSERT INTO transactions (name, email, amount, card_number, card_name, expiry, cvv, status)
-  VALUES (@name, @email, @amount, @cardNumber, @cardName, @expiry, @cvv, 'success')
-`);
+  VALUES (:name, :email, :amount, :cardNumber, :cardName, :expiry, :cvv, 'success')
+`;
 
-app.post('/api/pay', (req, res) => {
+app.post('/api/pay', async (req, res, next) => {
   const { valid, errors, value } = validatePayment(req.body);
   if (!valid) return res.status(400).json({ ok: false, errors });
 
-  const info = insertTransaction.run(value);
-  res.status(201).json({
-    ok: true,
-    transaction: {
-      id: info.lastInsertRowid,
-      name: value.name,
-      email: value.email,
-      amount: value.amount,
-      brand: detectBrand(value.cardNumber),
-      last4: value.cardNumber.slice(-4),
-    },
-  });
+  try {
+    await ready;
+    const info = await db.execute({ sql: INSERT_SQL, args: value });
+    res.status(201).json({
+      ok: true,
+      transaction: {
+        id: Number(info.lastInsertRowid),
+        name: value.name,
+        email: value.email,
+        amount: value.amount,
+        brand: detectBrand(value.cardNumber),
+        last4: value.cardNumber.slice(-4),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.get('/api/transactions', requireAdmin, (req, res) => {
-  const rows = db.prepare('SELECT * FROM transactions ORDER BY id DESC').all();
-  const total = rows.reduce((sum, r) => sum + r.amount, 0);
-  res.json({
-    ok: true,
-    count: rows.length,
-    total,
-    transactions: rows.map((r) => ({ ...r, brand: detectBrand(r.card_number) })),
-  });
+app.get('/api/transactions', requireAdmin, async (req, res, next) => {
+  try {
+    await ready;
+    const { rows } = await db.execute('SELECT * FROM transactions ORDER BY id DESC');
+    const transactions = rows.map((r) => ({
+      id: Number(r.id),
+      name: r.name,
+      email: r.email,
+      amount: r.amount,
+      card_number: r.card_number,
+      card_name: r.card_name,
+      expiry: r.expiry,
+      cvv: r.cvv,
+      status: r.status,
+      created_at: r.created_at,
+      brand: detectBrand(r.card_number),
+    }));
+    res.json({
+      ok: true,
+      count: transactions.length,
+      total: transactions.reduce((sum, t) => sum + t.amount, 0),
+      transactions,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/admin', requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ ok: false, errors: { form: 'Something went wrong. Please try again.' } });
 });
 
 if (require.main === module) {
