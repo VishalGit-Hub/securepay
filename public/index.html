@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="card">
+    <header class="head">
+      <h1>Secure Checkout</h1>
+      <ol class="steps" id="steps">
+        <li class="step active" data-step="1"><span>1</span> Details</li>
+        <li class="step" data-step="2"><span>2</span> Payment</li>
+        <li class="step" data-step="3"><span>3</span> Done</li>
+      </ol>
+    </header>
+
+    <!-- Step 1 -->
+    <form id="step1" class="panel" novalidate>
+      <label>
+        Name
+        <input name="name" type="text" placeholder="Jane Doe" autocomplete="name" />
+        <small class="error" data-for="name"></small>
+      </label>
+      <label>
+        Email
+        <input name="email" type="email" placeholder="jane@example.com" autocomplete="email" />
+        <small class="error" data-for="email"></small>
+      </label>
+      <label>
+        Amount (USD)
+        <div class="amount-wrap">
+          <span class="prefix">$</span>
+          <input name="amount" type="text" inputmode="decimal" placeholder="0.00" />
+        </div>
+        <small class="error" data-for="amount"></small>
+      </label>
+      <button type="submit" class="primary">Pay Now</button>
+    </form>
+
+    <!-- Step 2 -->
+    <form id="step2" class="panel hidden" novalidate>
+      <p class="summary" id="summary"></p>
+      <label>
+        Card number
+        <input name="cardNumber" type="text" inputmode="numeric" placeholder="4242 4242 4242 4242" autocomplete="cc-number" maxlength="23" />
+        <small class="error" data-for="cardNumber"></small>
+      </label>
+      <label>
+        Name on card
+        <input name="cardName" type="text" placeholder="JANE DOE" autocomplete="cc-name" />
+        <small class="error" data-for="cardName"></small>
+      </label>
+      <div class="row">
+        <label>
+          Expiry (MM/YY)
+          <input name="expiry" type="text" inputmode="numeric" placeholder="12/29" autocomplete="cc-exp" maxlength="5" />
+          <small class="error" data-for="expiry"></small>
+        </label>
+        <label>
+          CVV
+          <input name="cvv" type="password" inputmode="numeric" placeholder="123" autocomplete="cc-csc" maxlength="4" />
+          <small class="error" data-for="cvv"></small>
+        </label>
+      </div>
+      <small class="error" data-for="form"></small>
+      <div class="row">
+        <button type="button" class="ghost" id="back">Back</button>
+        <button type="submit" class="primary" id="submitPay">Pay $0.00</button>
+      </div>
+    </form>
+
+    <!-- Step 3 -->
+    <section id="step3" class="panel hidden center">
+      <div class="tick">&#10003;</div>
+      <h2>Thank you!</h2>
+      <p id="thanksText"></p>
+      <p class="muted" id="receipt"></p>
+      <button type="button" class="ghost" id="again">Make another payment</button>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
