@@ -1,12 +1,12 @@
 const path = require('path');
-const Database = require('better-sqlite3');
+const { createClient } = require('@libsql/client');
 
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, 'transactions.sqlite');
+const url = process.env.TURSO_DATABASE_URL
+  || `file:${process.env.DB_FILE || path.join(__dirname, 'transactions.sqlite')}`;
 
-const db = new Database(DB_FILE);
-db.pragma('journal_mode = WAL');
+const db = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
 
-db.exec(`
+const ready = db.execute(`
   CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -21,4 +21,4 @@ db.exec(`
   )
 `);
 
-module.exports = db;
+module.exports = { db, ready };

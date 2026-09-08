@@ -18,12 +18,34 @@ npm start          # http://localhost:3000
 
 ## Environment variables
 
-| Name         | Default             | Description |
-| ------------ | ------------------- | ----------- |
-| `PORT`       | `3000`              | HTTP port |
-| `DB_FILE`    | `transactions.sqlite` | SQLite file path |
-| `ADMIN_USER` | `admin`             | Admin dashboard username |
-| `ADMIN_PASS` | `admin123`          | Admin dashboard password |
+| Name                  | Default               | Description |
+| --------------------- | --------------------- | ----------- |
+| `PORT`                | `3000`                | HTTP port |
+| `TURSO_DATABASE_URL`  | —                     | Turso/libSQL URL (`libsql://…`). When unset, a local file is used |
+| `TURSO_AUTH_TOKEN`    | —                     | Turso auth token |
+| `DB_FILE`             | `transactions.sqlite` | Local SQLite file path (ignored when `TURSO_DATABASE_URL` is set) |
+| `ADMIN_USER`          | `admin`               | Admin dashboard username |
+| `ADMIN_PASS`          | `admin123`            | Admin dashboard password |
+
+## Deploying to Vercel
+
+Vercel's filesystem is read-only, so the database must be hosted — this app talks to
+[Turso](https://turso.tech) (hosted SQLite) through `@libsql/client`.
+
+```bash
+# 1. create the database
+turso db create securepay
+turso db show securepay --url          # -> TURSO_DATABASE_URL
+turso db tokens create securepay       # -> TURSO_AUTH_TOKEN
+
+# 2. deploy
+vercel env add TURSO_DATABASE_URL      # repeat for TURSO_AUTH_TOKEN, ADMIN_USER, ADMIN_PASS
+vercel --prod
+```
+
+`api/index.js` exports the Express app as a serverless function and `vercel.json` rewrites every
+non-static request to it. The `transactions` table is created on first request, so no migration
+step is needed.
 
 ## Data
 
